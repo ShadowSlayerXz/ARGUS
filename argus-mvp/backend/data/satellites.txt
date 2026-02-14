@@ -1,0 +1,72 @@
+[
+    {
+        "id": "sat_iss",
+        "name": "ISS (ZARYA)",
+        "norad_id": "25544",
+        "altitude_km": 420,
+        "inclination_deg": 51.6,
+        "status": "ACTIVE",
+        "operator": "NASA/Roscosmos",
+        "mass_kg": 420000,
+        "size_m": 73,
+        "has_propulsion": true,
+        "launch_date": "1998-11-20",
+        "country": "International"
+    },
+    {
+        "id": "sat_demo1",
+        "name": "DEMO-SAT-1",
+        "norad_id": "99001",
+        "altitude_km": 418,
+        "inclination_deg": 51.5,
+        "status": "ACTIVE",
+        "operator": "Your Company",
+        "mass_kg": 10,
+        "size_m": 0.3,
+        "has_propulsion": true,
+        "launch_date": "2024-06-15",
+        "country": "USA"
+    },
+    {
+        "id": "sat_starlink",
+        "name": "STARLINK-1234",
+        "norad_id": "48274",
+        "altitude_km": 550,
+        "inclination_deg": 53.0,
+        "status": "ACTIVE",
+        "operator": "SpaceX",
+        "mass_kg": 260,
+        "size_m": 3.2,
+        "has_propulsion": true,
+        "launch_date": "2021-03-11",
+        "country": "USA"
+    },
+    {
+        "id": "sat_debris",
+        "name": "DEBRIS-9876",
+        "norad_id": "87654",
+        "altitude_km": 415,
+        "inclination_deg": 51.8,
+        "status": "INACTIVE",
+        "operator": "Unknown",
+        "mass_kg": 50,
+        "size_m": 1.5,
+        "has_propulsion": false,
+        "launch_date": "2015-08-20",
+        "country": "Unknown"
+    },
+    {
+        "id": "sat_cubesat",
+        "name": "CUBESAT-XYZ",
+        "norad_id": "99002",
+        "altitude_km": 600,
+        "inclination_deg": 97.8,
+        "status": "ACTIVE",
+        "operator": "University Research",
+        "mass_kg": 5,
+        "size_m": 0.2,
+        "has_propulsion": false,
+        "launch_date": "2024-09-10",
+        "country": "EU"
+    }
+]

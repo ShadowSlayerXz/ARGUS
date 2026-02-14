@@ -1,0 +1,57 @@
+[
+    {
+        "id": "conj_001",
+        "primary_satellite_id": "sat_demo1",
+        "primary_name": "DEMO-SAT-1",
+        "secondary_object_id": "sat_iss",
+        "secondary_name": "ISS (ZARYA)",
+        "tca_offset_days": 8,
+        "time_to_tca_hours": 192,
+        "miss_distance_m": 847,
+        "relative_velocity_ms": 14532,
+        "probability_collision": 2.3e-4,
+        "risk_level": "HIGH",
+        "status": "ACTIVE",
+        "recommended_maneuver": {
+            "delta_v_ms": 1.2,
+            "direction": "radial-out",
+            "execution_offset_days": 7,
+            "fuel_cost_kg": 0.015
+        }
+    },
+    {
+        "id": "conj_002",
+        "primary_satellite_id": "sat_demo1",
+        "primary_name": "DEMO-SAT-1",
+        "secondary_object_id": "sat_debris",
+        "secondary_name": "DEBRIS-9876",
+        "tca_offset_days": 3,
+        "time_to_tca_hours": 72,
+        "miss_distance_m": 2340,
+        "relative_velocity_ms": 12800,
+        "probability_collision": 1.2e-5,
+        "risk_level": "MEDIUM",
+        "status": "ACTIVE",
+        "recommended_maneuver": {
+            "delta_v_ms": 0.5,
+            "direction": "prograde",
+            "execution_offset_days": 2.5,
+            "fuel_cost_kg": 0.006
+        }
+    },
+    {
+        "id": "conj_003",
+        "primary_satellite_id": "sat_cubesat",
+        "primary_name": "CUBESAT-XYZ",
+        "secondary_object_id": "sat_starlink",
+        "secondary_name": "STARLINK-1234",
+        "tca_offset_days": 12,
+        "time_to_tca_hours": 288,
+        "miss_distance_m": 5230,
+        "relative_velocity_ms": 8900,
+        "probability_collision": 3.4e-6,
+        "risk_level": "LOW",
+        "status": "ACTIVE",
+        "recommended_maneuver": null
+    }
+]
