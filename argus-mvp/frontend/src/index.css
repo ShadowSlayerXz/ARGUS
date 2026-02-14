@@ -2,18 +2,247 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ------------------------------------------------------------------ */
+/*  Base                                                               */
+/* ------------------------------------------------------------------ */
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #111827;
-  color: #ffffff;
+  background-color: #0f1117;
+  color: #c8cdd5;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+code,
+.mono {
+  font-family: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Scrollbar                                                          */
+/* ------------------------------------------------------------------ */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2f3a;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3f4a;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Panel — the main building block                                    */
+/* ------------------------------------------------------------------ */
+.panel {
+  background: #161920;
+  border: 1px solid #1e222c;
+  border-radius: 6px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid #1e222c;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.panel-header .badge {
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 11px;
+  color: #4b5563;
+}
+
+.panel-body {
+  padding: 10px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Status dot                                                         */
+/* ------------------------------------------------------------------ */
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.status-dot--active {
+  background: #22c55e;
+}
+
+.status-dot--inactive {
+  background: #4b5563;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Risk label                                                         */
+/* ------------------------------------------------------------------ */
+.risk-label {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 18px;
+}
+
+.risk-label--high {
+  background: #dc2626;
+  color: #fff;
+}
+
+.risk-label--medium {
+  background: #a16207;
+  color: #fef3c7;
+}
+
+.risk-label--low {
+  background: #166534;
+  color: #bbf7d0;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Data rows                                                          */
+/* ------------------------------------------------------------------ */
+.data-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 4px 0;
+  font-size: 12px;
+}
+
+.data-row .label {
+  color: #6b7280;
+}
+
+.data-row .value {
+  color: #d1d5db;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  List item (satellite row, conjunction row)                         */
+/* ------------------------------------------------------------------ */
+.list-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid #1e222c;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.list-item:last-child {
+  border-bottom: none;
+}
+
+.list-item:hover {
+  background: #1c2028;
+}
+
+.list-item--selected {
+  background: #1a1f2e;
+  border-left: 2px solid #3b82f6;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Stat card                                                          */
+/* ------------------------------------------------------------------ */
+.stat-card {
+  padding: 12px 14px;
+  border-bottom: 1px solid #1e222c;
+}
+
+.stat-card:last-child {
+  border-bottom: none;
+}
+
+.stat-card .stat-label {
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 2px;
+}
+
+.stat-card .stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1.2;
+}
+
+.stat-card .stat-value--blue {
+  color: #60a5fa;
+}
+
+.stat-card .stat-value--yellow {
+  color: #facc15;
+}
+
+.stat-card .stat-value--red {
+  color: #ef4444;
+}
+
+.stat-card .stat-value--green {
+  color: #4ade80;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Misc                                                               */
+/* ------------------------------------------------------------------ */
+.tag {
+  display: inline-block;
+  padding: 1px 6px;
+  background: #1e222c;
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #9ca3af;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #1e222c;
+  margin: 0;
+}
+
+.btn-close {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-close:hover {
+  background: #1e222c;
+  color: #d1d5db;
 }
