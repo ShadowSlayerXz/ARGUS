@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import GlobeView from './components/GlobeView';
 import SatelliteList from './components/SatelliteList';
 import ConjunctionAlerts from './components/ConjunctionAlerts';
 import SatelliteDetails from './components/SatelliteDetails';
@@ -11,6 +12,7 @@ interface Satellite {
   name: string;
   norad_id: string;
   altitude_km: number;
+  inclination_deg: number;
   status: string;
   operator: string;
 }
@@ -73,7 +75,7 @@ function App() {
             <span className="text-sm font-bold tracking-wider text-white">ARGUS</span>
             <span className="text-xs text-gray-600">Space Debris Tracking &amp; Collision Avoidance</span>
           </div>
-          <div className="flex items-center gap-4 text-xs text-gray-500">
+          <div className="hidden sm:flex items-center gap-4 text-xs text-gray-500">
             <span className="flex items-center gap-1.5">
               <span className="status-dot status-dot--active" />
               System Operational
@@ -86,6 +88,13 @@ function App() {
 
       {/* Main */}
       <main className="flex-1 max-w-screen-2xl mx-auto w-full p-4">
+
+        {/* Globe — full width */}
+        <div className="mb-3">
+          <GlobeView satellites={satellites} onSelectSatellite={setSelectedSatellite} />
+        </div>
+
+        {/* Data panels */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
 
           {/* Col 1 — Stats + Alerts */}
