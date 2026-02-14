@@ -1,29 +1,118 @@
-# ARGUS MVP - Space Debris Tracking & Collision Avoidance
+# ARGUS
 
-**Hackathon Demo Version**
+**Open-source space debris tracking and collision avoidance platform.**
 
-ARGUS is an open-source platform for satellite operators to track space debris and avoid collisions.
+ARGUS provides satellite operators with real-time situational awareness of the orbital environment. It detects potential conjunctions (close approaches between objects), assesses collision risk, and recommends avoidance manoeuvres — giving operators the information they need to protect their assets in orbit.
 
-## Quick Start
+---
+
+## The Problem
+
+There are over 30,000 tracked objects in Earth orbit and millions of pieces of untracked debris. A collision at orbital speeds (7–8 km/s) can destroy an operational satellite and generate thousands of new debris fragments, worsening the problem in a chain reaction known as the Kessler Syndrome.
+
+Most satellite operators today rely on periodic Conjunction Data Messages (CDMs) from government agencies, then manually evaluate threats and plan responses. This process is slow, fragmented, and doesn't scale.
+
+## What ARGUS Does
+
+ARGUS aims to consolidate the conjunction assessment workflow into a single platform:
+
+1. **Track** — Ingest orbital data (TLE/ephemeris) and maintain a catalogue of tracked objects.
+2. **Detect** — Identify upcoming close approaches between objects and compute miss distance, relative velocity, and collision probability.
+3. **Assess** — Classify events by risk level (HIGH / MEDIUM / LOW) so operators can prioritise their attention.
+4. **Visualise** — Render the orbital environment in an interactive 3D view, making it easy to understand the geometry of a conjunction at a glance.
+5. **Recommend** — For maneuverable satellites, suggest avoidance manoeuvres (delta-v, direction, timing, fuel cost).
+
+> **Current status:** This is an early MVP using simulated data. It demonstrates the core user experience and interface design. Integration with live orbital data sources (e.g. Space-Track.org) is planned.
+
+---
+
+## Architecture
+
+```
+argus-mvp/
+├── backend/                 # Python / FastAPI
+│   ├── main.py              # API server (REST + WebSocket)
+│   ├── mock_data.py         # Data loader and orbit propagation
+│   ├── data/
+│   │   ├── satellites.txt   # Satellite catalogue (JSON)
+│   │   └── conjunctions.txt # Conjunction events (JSON)
+│   └── requirements.txt
+│
+├── frontend/                # React 18 / TypeScript
+│   ├── src/
+│   │   ├── App.tsx          # Application shell and layout
+│   │   ├── components/
+│   │   │   ├── GlobeView.tsx        # 3D orbital visualisation (Three.js)
+│   │   │   ├── Dashboard.tsx        # System overview statistics
+│   │   │   ├── SatelliteList.tsx     # Tracked objects table
+│   │   │   ├── ConjunctionAlerts.tsx # Conjunction event feed
+│   │   │   └── SatelliteDetails.tsx  # Object detail panel
+│   │   └── services/
+│   │       └── api.ts       # API client and WebSocket helper
+│   └── package.json
+│
+└── README.md
+```
+
+### Backend
+
+The backend is a FastAPI application that serves satellite and conjunction data over a REST API and pushes real-time position updates via WebSocket.
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/satellites` | GET | List all tracked satellites with current state vectors |
+| `/api/satellites/{id}` | GET | Get a single satellite with its upcoming conjunctions |
+| `/api/conjunctions` | GET | List all active conjunction events with risk summary |
+| `/api/conjunctions/{id}` | GET | Get details on a specific conjunction |
+| `/api/stats` | GET | Platform-wide statistics |
+| `/ws` | WS | Real-time satellite position stream (1 Hz) |
+
+Data is loaded from JSON-formatted text files in `backend/data/`. Timestamps for conjunction events are computed dynamically relative to the current time at server startup.
+
+Orbit propagation uses a simplified circular-orbit model (sufficient for demonstration; production would use SGP4 with real TLE data).
+
+### Frontend
+
+The frontend is a React 18 application built with TypeScript and Tailwind CSS. It connects to the backend API on startup and refreshes data every 5 seconds.
+
+Key views:
+
+- **Orbital View** — Interactive 3D globe (Three.js / react-three-fiber) showing Earth, satellite orbits, and animated position markers. Supports mouse rotation and zoom.
+- **System Overview** — Summary statistics: tracked objects, active conjunctions, and high-risk event count.
+- **Satellite List** — Tabular list of all tracked objects with status, NORAD ID, altitude, and operator.
+- **Conjunction Alerts** — Chronological feed of conjunction events sorted by risk, showing collision probability, miss distance, and time to closest approach.
+- **Satellite Details** — Detailed view of a selected satellite including orbital parameters, operator information, propulsion capability, and associated conjunctions.
+
+---
+
+## Getting Started
 
 ### Prerequisites
-- Python 3.10+
-- Node.js 18+
-- npm or yarn
 
-### Backend Setup
+- Python 3.10 or later
+- Node.js 18 or later
+- npm
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/ShadowSlayerXz/ARGUS.git
+cd ARGUS/argus-mvp
+```
+
+### 2. Start the backend
 
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 python main.py
 ```
 
-Backend runs on: `http://localhost:8000`
+The API server starts at **http://localhost:8000**. Interactive API documentation is available at http://localhost:8000/docs.
 
-### Frontend Setup
+### 3. Start the frontend
 
 ```bash
 cd frontend
@@ -31,114 +120,62 @@ npm install
 npm start
 ```
 
-Frontend runs on: `http://localhost:3000`
-
-## Project Structure
-
-```
-argus-mvp/
-├── backend/              # FastAPI backend
-│   ├── main.py          # Main API server
-│   ├── data/            # External data files
-│   │   ├── satellites.txt
-│   │   └── conjunctions.txt
-│   ├── mock_data.py     # Data loader & orbit propagation
-│   └── requirements.txt
-├── frontend/            # React frontend
-│   ├── src/
-│   │   ├── components/  # React components
-│   │   ├── services/    # API service layer
-│   │   └── App.tsx
-│   └── package.json
-├── scripts/             # Utility scripts
-└── README.md
-```
-
-## MVP Features
-
-### Implemented
-- 3D Earth visualization with satellite orbits (Cesium.js)
-- Real-time satellite tracking (5 demo satellites)
-- Conjunction detection and alerts
-- Risk assessment (HIGH / MEDIUM / LOW)
-- Interactive satellite details
-- Live orbit propagation
-
-### Planned (Post-MVP)
-- Real TLE data from Space-Track.org
-- User authentication
-- Database persistence
-- Email / SMS notifications
-- Production deployment
-- Advanced Pc calculations
-
-## Demo Scenario
-
-The MVP demonstrates:
-1. **ISS** at 420 km altitude
-2. **DEMO-SAT-1** (your satellite) at 418 km - close approach to ISS
-3. **STARLINK-1234** at 550 km
-4. **DEBRIS-9876** at 415 km - collision risk
-5. **CUBESAT-XYZ** at 600 km
-
-**High-Risk Event:** DEMO-SAT-1 vs ISS conjunction in 8 days (Pc = 2.3E-4)
-
-## Technology Stack
-
-**Backend:**
-- FastAPI (Python web framework)
-- Uvicorn (ASGI server)
-- Mock data loaded from external files (no database for MVP)
-
-**Frontend:**
-- React 18 + TypeScript
-- Cesium.js (3D globe visualization)
-- Tailwind CSS (styling)
-- Axios (API calls)
-
-## API Endpoints
-
-```
-GET  /api/satellites          # List all satellites
-GET  /api/satellites/{id}     # Get satellite details
-GET  /api/conjunctions        # List all conjunctions
-GET  /api/conjunctions/{id}   # Get conjunction details
-WS   /ws                      # WebSocket for live updates
-```
-
-## Demo Tips
-
-1. **Start with the 3D view** - Shows Earth with satellite orbits
-2. **Click on satellites** - View details and upcoming conjunctions
-3. **Alerts panel** - Shows high-risk conjunctions
-4. **Watch live propagation** - Orbits update every second
-
-## Notes
-
-- This is a **hackathon MVP** with mock data
-- Orbital mechanics are **simplified** for demo purposes
-- Real implementation would use SGP4 and actual TLE data
-- Collision probability uses a simplified formula (suitable for demonstration)
-
-## Roadmap (Post-Hackathon)
-
-1. Integrate real TLE data from Space-Track.org
-2. Implement proper SGP4 propagation
-3. Add PostgreSQL database
-4. Build user authentication
-5. Deploy to cloud (AWS / GCP)
-6. Add email / SMS alerting
-
-## License
-
-Apache 2.0 - Open Source
-
-## Team
-
-Your Name / Your Team Name
-
-Built for [Hackathon Name] 2025
+The application opens at **http://localhost:3000**.
 
 ---
 
-**ARGUS: Always Watching, Always Protecting**
+## Demo Data
+
+The MVP ships with a built-in scenario designed to demonstrate all risk levels:
+
+| Object | NORAD ID | Altitude | Status | Notes |
+|---|---|---|---|---|
+| ISS (ZARYA) | 25544 | 420 km | Active | International Space Station |
+| DEMO-SAT-1 | 99001 | 418 km | Active | Close approach to ISS (HIGH risk) |
+| STARLINK-1234 | 48274 | 550 km | Active | Starlink constellation member |
+| DEBRIS-9876 | 87654 | 415 km | Inactive | Uncontrolled debris fragment |
+| CUBESAT-XYZ | 99002 | 600 km | Active | University research satellite |
+
+The scenario includes three conjunction events:
+
+- **DEMO-SAT-1 / ISS** — HIGH risk (Pc = 2.3 × 10⁻⁴, miss distance 847 m, TCA in 8 days)
+- **DEMO-SAT-1 / DEBRIS-9876** — MEDIUM risk (Pc = 1.2 × 10⁻⁵, miss distance 2,340 m, TCA in 3 days)
+- **CUBESAT-XYZ / STARLINK-1234** — LOW risk (Pc = 3.4 × 10⁻⁶, miss distance 5,230 m, TCA in 12 days)
+
+---
+
+## Technology Stack
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| API server | FastAPI | REST endpoints, WebSocket, automatic OpenAPI docs |
+| ASGI server | Uvicorn | High-performance async server |
+| Frontend framework | React 18 | Component-based UI |
+| Language | TypeScript | Type safety across the frontend |
+| 3D visualisation | Three.js / react-three-fiber | Orbital globe rendering |
+| Styling | Tailwind CSS 3 | Utility-first CSS |
+| HTTP client | Axios | API communication |
+
+---
+
+## Roadmap
+
+The following items are planned for future development:
+
+- [ ] Integrate live TLE data from Space-Track.org
+- [ ] Implement SGP4 orbit propagation for accurate positioning
+- [ ] Add PostgreSQL database for persistent storage
+- [ ] User authentication and role-based access
+- [ ] Email and SMS alerting for high-risk conjunctions
+- [ ] Cloud deployment (AWS / GCP)
+- [ ] Historical conjunction analysis and trending
+
+---
+
+## Contributing
+
+Contributions are welcome. Please open an issue to discuss proposed changes before submitting a pull request.
+
+## License
+
+Apache 2.0
