@@ -6,6 +6,7 @@ Now with real N2YO + SGP4 orbital propagation
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from datetime import datetime
 import asyncio
 import json
@@ -16,6 +17,18 @@ from services.satellite_tracker import satellite_tracker
 from config import config
 
 from mock_data import get_all_conjunctions, get_conjunction_by_id
+
+
+# Custom JSON Response with pretty formatting
+class PrettyJSONResponse(JSONResponse):
+    def render(self, content) -> bytes:
+        return json.dumps(
+            content,
+            ensure_ascii=False,
+            allow_nan=False,
+            indent=2,
+            separators=(", ", ": "),
+        ).encode("utf-8")
 
 
 # ============================================================================
@@ -42,7 +55,8 @@ app = FastAPI(
     title="ARGUS API",
     description="Space Debris Tracking & Collision Avoidance Platform",
     version="0.1.0 (MVP)",
-    lifespan=lifespan
+    lifespan=lifespan,
+    default_response_class=PrettyJSONResponse
 )
 
 # CORS middleware - allow frontend to connect
