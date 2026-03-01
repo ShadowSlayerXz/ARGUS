@@ -1,6 +1,7 @@
 """
 ARGUS MVP Backend
 FastAPI server with WebSocket support for live updates
+Now with real N2YO + SGP4 orbital propagation
 """
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -9,21 +10,39 @@ from datetime import datetime
 import asyncio
 import json
 from typing import List
+from contextlib import asynccontextmanager
+from services.n2yo_client import n2yo_client
+from services.satellite_tracker import satellite_tracker
+from config import config
 
-from mock_data import (
-    get_all_satellites,
-    get_satellite_by_id,
-    get_all_conjunctions,
-    get_conjunction_by_id,
-    get_conjunctions_for_satellite,
-    propagate_satellite,
-    SATELLITES
-)
+from mock_data import get_all_conjunctions, get_conjunction_by_id
+
+
+# ============================================================================
+# LIFESPAN EVENT HANDLER
+# ============================================================================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize satellite tracking on startup"""
+    if config.validate():
+        print("\n[*] Initializing satellite tracking system...")
+        await satellite_tracker.initialize_default_satellites()
+        print("[OK] Satellite tracking ready!\n")
+    else:
+        print("\n[!] N2YO API key not configured - Real tracking disabled\n")
+    
+    yield  # Application runs
+    
+    # Cleanup on shutdown (if needed)
+    print("\n[*] Shutting down ARGUS...")
+
 
 app = FastAPI(
     title="ARGUS API",
     description="Space Debris Tracking & Collision Avoidance Platform",
-    version="0.1.0 (MVP)"
+    version="0.1.0 (MVP)",
+    lifespan=lifespan
 )
 
 # CORS middleware - allow frontend to connect
@@ -72,8 +91,30 @@ async def root():
 
 @app.get("/api/satellites")
 async def list_satellites():
-    """Get all tracked satellites with current positions"""
-    satellites = get_all_satellites()
+    """Get all tracked satellites with real SGP4 positions"""
+    positions = await satellite_tracker.get_all_positions()
+    
+    # Transform to frontend format
+    satellites = []
+    for pos in positions:
+        satellites.append({
+            "id": f"sat_{pos['norad_id']}",
+            "name": pos['name'],
+            "norad_id": str(pos['norad_id']),
+            "altitude_km": round(pos['altitude_km'], 2),
+            "latitude": round(pos['latitude'], 4),
+            "longitude": round(pos['longitude'], 4),
+            "inclination_deg": 51.6,  # TODO: Extract from TLE
+            "status": "ACTIVE",
+            "operator": "Various",
+            "has_propulsion": True,
+            "current_state": {
+                "position": pos['position'],
+                "velocity": pos['velocity'],
+                "altitude_km": pos['altitude_km']
+            }
+        })
+    
     return {
         "satellites": satellites,
         "count": len(satellites),
@@ -82,17 +123,44 @@ async def list_satellites():
 
 @app.get("/api/satellites/{satellite_id}")
 async def get_satellite(satellite_id: str):
-    """Get specific satellite details"""
-    satellite = get_satellite_by_id(satellite_id)
-    if not satellite:
-        return {"error": "Satellite not found"}, 404
+    """Get specific satellite details with real SGP4 position"""
+    # Extract NORAD ID from satellite_id (format: sat_25544)
+    try:
+        norad_id = int(satellite_id.replace("sat_", ""))
+    except:
+        return {"error": "Invalid satellite ID format"}, 400
     
-    # Get conjunctions for this satellite
-    conjunctions = get_conjunctions_for_satellite(satellite_id)
+    # Get current position
+    pos = await satellite_tracker.get_current_position(norad_id)
+    
+    if not pos:
+        return {"error": "Satellite not found or propagation failed"}, 404
+    
+    satellite = {
+        "id": satellite_id,
+        "name": pos['name'],
+        "norad_id": str(norad_id),
+        "altitude_km": round(pos['altitude_km'], 2),
+        "latitude": round(pos['latitude'], 4),
+        "longitude": round(pos['longitude'], 4),
+        "inclination_deg": 51.6,  # TODO: Extract from TLE
+        "status": "ACTIVE",
+        "operator": "Various",
+        "has_propulsion": True,
+        "mass_kg": 1000,
+        "size_m": 5,
+        "launch_date": "2020-01-01",
+        "country": "International",
+        "current_state": {
+            "position": pos['position'],
+            "velocity": pos['velocity'],
+            "altitude_km": pos['altitude_km']
+        }
+    }
     
     return {
         "satellite": satellite,
-        "conjunctions": conjunctions,
+        "conjunctions": [],  # TODO: Implement real conjunction detection
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
 
@@ -132,19 +200,89 @@ async def get_conjunction(conjunction_id: str):
 @app.get("/api/stats")
 async def get_statistics():
     """Get platform statistics"""
-    satellites = get_all_satellites()
+    positions = await satellite_tracker.get_all_positions()
     conjunctions = get_all_conjunctions()
     
-    active_sats = sum(1 for s in satellites if s['status'] == 'ACTIVE')
+    active_sats = len(positions)
     high_risk = sum(1 for c in conjunctions if c['risk_level'] == 'HIGH')
     
     return {
-        "total_satellites": len(satellites),
+        "total_satellites": len(positions),
         "active_satellites": active_sats,
         "total_conjunctions": len(conjunctions),
         "high_risk_conjunctions": high_risk,
         "last_updated": datetime.utcnow().isoformat() + "Z"
     }
+
+# ============================================================================
+# N2YO LIVE DATA ENDPOINTS
+# ============================================================================
+
+@app.get("/api/n2yo/tle/{norad_id}")
+async def get_tle_data(norad_id: int):
+    """Get TLE data for a satellite from N2YO API"""
+    data = await n2yo_client.get_tle(norad_id)
+    if not data:
+        return {"error": "Failed to fetch TLE data or API key not configured"}, 404
+    return data
+
+@app.get("/api/n2yo/positions/{norad_id}")
+async def get_live_positions(norad_id: int, seconds: int = 300):
+    """Get live satellite positions from N2YO API"""
+    data = await n2yo_client.get_positions(
+        norad_id,
+        config.DEFAULT_OBSERVER_LAT,
+        config.DEFAULT_OBSERVER_LNG,
+        config.DEFAULT_OBSERVER_ALT,
+        seconds
+    )
+    if not data:
+        return {"error": "Failed to fetch position data or API key not configured"}, 404
+    return data
+
+@app.get("/api/n2yo/visual-passes/{norad_id}")
+async def get_visual_passes_data(norad_id: int, days: int = 10):
+    """Get visual passes for a satellite from your location"""
+    data = await n2yo_client.get_visual_passes(
+        norad_id,
+        config.DEFAULT_OBSERVER_LAT,
+        config.DEFAULT_OBSERVER_LNG,
+        config.DEFAULT_OBSERVER_ALT,
+        days,
+        300  # min 300 seconds visibility
+    )
+    if not data:
+        return {"error": "Failed to fetch visual passes or API key not configured"}, 404
+    return data
+
+@app.get("/api/n2yo/radio-passes/{norad_id}")
+async def get_radio_passes_data(norad_id: int, days: int = 10):
+    """Get radio communication passes for a satellite"""
+    data = await n2yo_client.get_radio_passes(
+        norad_id,
+        config.DEFAULT_OBSERVER_LAT,
+        config.DEFAULT_OBSERVER_LNG,
+        config.DEFAULT_OBSERVER_ALT,
+        days,
+        40  # min 40 degrees elevation
+    )
+    if not data:
+        return {"error": "Failed to fetch radio passes or API key not configured"}, 404
+    return data
+
+@app.get("/api/n2yo/above")
+async def get_satellites_above():
+    """Get satellites currently above your location (Hyderabad)"""
+    data = await n2yo_client.get_above(
+        config.DEFAULT_OBSERVER_LAT,
+        config.DEFAULT_OBSERVER_LNG,
+        config.DEFAULT_OBSERVER_ALT,
+        70,  # 70 degree search radius
+        0    # 0 = all categories
+    )
+    if not data:
+        return {"error": "Failed to fetch satellites above or API key not configured"}, 404
+    return data
 
 # ============================================================================
 # WEBSOCKET ENDPOINT
@@ -153,30 +291,26 @@ async def get_statistics():
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """
-    WebSocket for real-time updates
-    Sends satellite positions every second
+    WebSocket for real-time updates with SGP4 propagation
+    Sends satellite positions every 5 seconds
     """
     await manager.connect(websocket)
     
     try:
-        # Keep connection alive and send updates
-        start_time = datetime.utcnow()
-        
         while True:
-            # Calculate time offset for propagation
             current_time = datetime.utcnow()
-            time_offset = (current_time - start_time).total_seconds()
             
-            # Propagate all satellites
+            # Get real positions for all tracked satellites
+            positions = await satellite_tracker.get_all_positions()
+            
             updates = []
-            for sat in SATELLITES:
-                state = propagate_satellite(sat, time_offset)
+            for pos in positions:
                 updates.append({
-                    "id": sat['id'],
-                    "name": sat['name'],
-                    "position": state['position'],
-                    "velocity": state['velocity'],
-                    "altitude_km": state['altitude_km']
+                    "id": f"sat_{pos['norad_id']}",
+                    "name": pos['name'],
+                    "position": pos['position'],
+                    "velocity": pos['velocity'],
+                    "altitude_km": pos['altitude_km']
                 })
             
             # Send updates to client
@@ -186,8 +320,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 "satellites": updates
             })
             
-            # Update every 1 second
-            await asyncio.sleep(1)
+            # Update every 5 seconds (SGP4 is CPU intensive)
+            await asyncio.sleep(5)
             
     except WebSocketDisconnect:
         manager.disconnect(websocket)
@@ -201,10 +335,24 @@ async def websocket_endpoint(websocket: WebSocket):
 
 if __name__ == "__main__":
     import uvicorn
-    print("  ARGUS API Starting...")
+    
+    # Display configuration
+    config.display()
+    
+    # Validate API key
+    if config.validate():
+        print("[OK] N2YO API key configured - Real satellite tracking enabled")
+        print("   ISS tracking: http://localhost:8000/api/satellites/sat_25544")
+        print("   All satellites: http://localhost:8000/api/satellites")
+    else:
+        print("[!] N2YO API key not set - Add to backend/.env file")
+        print("   Get key from: https://www.n2yo.com/api/")
+    
+    print("\n[*] ARGUS API Starting...")
     print("  Backend: http://localhost:8000")
     print("  API Docs: http://localhost:8000/docs")
     print("  WebSocket: ws://localhost:8000/ws")
+    print("\n" + "="*50 + "\n")
     
     uvicorn.run(
         "main:app",

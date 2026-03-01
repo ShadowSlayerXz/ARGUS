@@ -8,13 +8,14 @@ from typing import Optional, Dict, Any
 from datetime import datetime
 import asyncio
 
-from backend import config
+from config import config
 
 class N2YOClient:
     
     def __init__(self):
         self.api_key = config.N2YO_API_KEY
         self.base_url = config.N2YO_BASE_URL
+        self.client = httpx.AsyncClient(timeout=30.0)
         
     async def close(self):
         """Close any resources if needed (e.g., HTTP client)"""
